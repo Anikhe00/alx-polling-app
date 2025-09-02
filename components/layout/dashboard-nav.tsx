@@ -56,8 +56,19 @@ export function DashboardNav() {
                 <Link href="/profile?tab=settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                Log out
+              <DropdownMenuItem asChild>
+                <button 
+                  onClick={async () => {
+                    const { logoutUser } = await import('@/lib/auth/auth-utils')
+                    const result = await logoutUser()
+                    if (result.success) {
+                      window.location.href = '/login'
+                    }
+                  }}
+                  className="w-full text-left cursor-pointer"
+                >
+                  Log out
+                </button>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

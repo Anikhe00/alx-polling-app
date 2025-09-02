@@ -7,6 +7,12 @@ export interface User {
   updatedAt: Date
 }
 
+export interface AuthFormData {
+  email: string
+  password: string
+  name?: string
+}
+
 export interface Poll {
   id: string
   title: string

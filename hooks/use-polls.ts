@@ -12,7 +12,9 @@ export function usePolls() {
       setLoading(true)
       setError(null)
       const data = await getPolls()
-      setPolls(data)
+      if (Array.isArray(data)) {
+        setPolls(data as Poll[])
+      }
     } catch (err) {
       setError('Failed to fetch polls')
       console.error('Error fetching polls:', err)

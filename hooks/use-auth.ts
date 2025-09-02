@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User } from '@/lib/types'
 import { loginUser, registerUser, logoutUser, getCurrentUser, isAuthenticated } from '@/lib/auth/auth-utils'
+import { supabase } from '@/lib/supabase/client'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
@@ -10,8 +11,9 @@ export function useAuth() {
     // Check if user is authenticated on mount
     const checkAuth = async () => {
       try {
-        if (isAuthenticated()) {
-          const currentUser = getCurrentUser()
+        const isUserAuthenticated = await isAuthenticated()
+        if (isUserAuthenticated) {
+          const currentUser = await getCurrentUser()
           setUser(currentUser)
         }
       } catch (error) {
@@ -22,6 +24,25 @@ export function useAuth() {
     }
 
     checkAuth()
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setLoading(true)
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          const currentUser = await getCurrentUser()
+          setUser(currentUser)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+        }
+        setLoading(false)
+      }
+    )
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const login = async (email: string, password: string) => {
@@ -29,11 +50,11 @@ export function useAuth() {
       setLoading(true)
       const result = await loginUser({ email, password })
       
-      if (result.success) {
+      if (result.success && result.user) {
         setUser(result.user)
         return { success: true }
       } else {
-        return { success: false, error: 'Login failed' }
+        return { success: false, error: result.error || 'Login failed' }
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -48,11 +69,11 @@ export function useAuth() {
       setLoading(true)
       const result = await registerUser({ email, password, name })
       
-      if (result.success) {
+      if (result.success && result.user) {
         setUser(result.user)
         return { success: true }
       } else {
-        return { success: false, error: 'Registration failed' }
+        return { success: false, error: result.error || 'Registration failed' }
       }
     } catch (error) {
       console.error('Registration error:', error)
@@ -71,7 +92,7 @@ export function useAuth() {
         setUser(null)
         return { success: true }
       } else {
-        return { success: false, error: 'Logout failed' }
+        return { success: false, error: result.error || 'Logout failed' }
       }
     } catch (error) {
       console.error('Logout error:', error)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,8 +30,15 @@ interface PollFormData {
 export default function CreatePollPage() {
   const router = useRouter()
   const { createNewPoll, loading } = usePolls()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
+  
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login?redirectedFrom=/polls/create')
+    }
+  }, [user, authLoading, router])
   const [formData, setFormData] = useState<PollFormData>({
     title: '',
     description: '',
